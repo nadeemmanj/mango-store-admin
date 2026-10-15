@@ -6,6 +6,7 @@ import CategoryIcons from '@/components/store/CategoryIcons';
 import ProductGrid from '@/components/store/ProductGrid';
 import SuperSavings from '@/components/store/SuperSavings';
 import { Product } from '@/types';
+import ContactSection from '@/components/store/ContactSection';
 
 export const metadata: Metadata = {
   title: 'Maan Al Khair — Premium Mangoes, Fruits & Vegetables Dubai',
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
 async function getProducts(): Promise<Product[]> {
   try {
     const base = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    const res  = await fetch(`${base}/api/products`, { next: { revalidate: 180 } });
+    const res  = await fetch(`${base}/api/products`, { cache: 'no-store' });
     if (!res.ok) return [];
     const d = await res.json();
     if (Array.isArray(d))          return d;
@@ -79,6 +80,8 @@ export default async function HomePage() {
           </div>
         </div>
       )}
+
+      <ContactSection />
 
     </div>
   );

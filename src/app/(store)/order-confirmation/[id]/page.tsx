@@ -1,12 +1,14 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { use } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { CheckCircle, Package, MapPin, Clock, ArrowRight } from 'lucide-react';
 
-export default function OrderConfirmationPage({ params }: { params: { id: string } }) {
+export default function OrderConfirmationPage({ params }: { params: Promise<{ id: string }> }) {
   const searchParams = useSearchParams();
   const orderNumber = searchParams.get('orderNumber') || 'AAK-2024-0000';
+  const { id } = use(params);
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
@@ -51,7 +53,7 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
 
             {/* Actions */}
             <div className="space-y-2 pt-2">
-              <Link href={`/track/${params.id}`}
+                <Link href={`/track/${id}`}
                 className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-white font-bold text-sm"
                 style={{ background: '#1a8a3c' }}>
                 Track My Order <ArrowRight size={16} />

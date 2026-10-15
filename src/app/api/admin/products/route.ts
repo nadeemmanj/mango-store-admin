@@ -1,11 +1,16 @@
 import { NextResponse } from 'next/server';
-import { connectDB } from '@/lib/mongodb';
-import Product from '@/models/Product';
+import { db } from '@/lib/firebase';
+import { FieldValue } from 'firebase-admin/firestore';
 
 export async function GET() {
   try {
-    await connectDB();
-    const products = await Product.find({}).sort({ createdAt: -1 });
+    const snapshot = await db.collection('products').orderBy('createdAt', 'desc').get();
+
+    const products = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
     return NextResponse.json({ success: true, products });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
@@ -14,15 +19,21 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    await connectDB();
     const body = await req.json();
-    const product = await Product.create({
+
+    const docRef = await db.collection('products').add({
       ...body,
       slug: body.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
       images: body.image ? [body.image] : [],
       inStock: (body.stock ?? 0) > 0,
       pricePerKg: body.price,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
+
+    const newDoc = await docRef.get();
+    const product = { id: newDoc.id, ...newDoc.data() };
+
     return NextResponse.json({ success: true, product }, { status: 201 });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

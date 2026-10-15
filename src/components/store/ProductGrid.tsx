@@ -89,7 +89,8 @@ export default function ProductGrid({ products: raw, showFilters = false }: Prop
       ) : (
         /* 2 cols on mobile → 4 cols on desktop (768px+) */
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }} className="pg-grid">
-          {list.map((p) => <ProductCard key={String(p._id)} product={p} />)}
+          {list.map((p) => <ProductCard key={p.id} product={p} />
+        )}
         </div>
       )}
 

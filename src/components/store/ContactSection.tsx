@@ -32,9 +32,6 @@ export default function ContactSection() {
           </p>
         </div>
       </div>
-      <div style={{ textAlign: 'center', marginTop: 40, paddingTop: 24, borderTop: '1px solid #e8f0e8', color: '#aaa', fontSize: 12 }}>
-        © {new Date().getFullYear()} Aan Al Khair L.L.C. All rights reserved.
-      </div>
     </section>
   );
 }

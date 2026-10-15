@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { connectDB } from '@/lib/mongodb';
-import User from '@/models/User';
+import { db } from '@/lib/firebase';
+import { FieldValue } from 'firebase-admin/firestore';
 
 export async function POST(req: Request) {
   try {
@@ -21,11 +21,13 @@ export async function POST(req: Request) {
       );
     }
 
-    await connectDB();
+    const normalizedEmail = email.toLowerCase().trim();
 
     // Check if email already exists
-    const existing = await User.findOne({ email: email.toLowerCase().trim() });
-    if (existing) {
+    const usersRef = db.collection('users');
+    const existing = await usersRef.where('email', '==', normalizedEmail).limit(1).get();
+
+    if (!existing.empty) {
       return NextResponse.json(
         { message: 'An account with this email already exists.' },
         { status: 409 }
@@ -33,13 +35,15 @@ export async function POST(req: Request) {
     }
 
     // Create user
-    await User.create({
-      name:         name.trim(),
-      email:        email.toLowerCase().trim(),
-      phone:        phone?.trim() || '',
+    await usersRef.add({
+      name: name.trim(),
+      email: normalizedEmail,
+      phone: phone?.trim() || '',
       passwordHash: await bcrypt.hash(password, 12),
-      role:         'customer',
-      addresses:    [],
+      role: 'customer',
+      addresses: [],
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
     });
 
     return NextResponse.json(

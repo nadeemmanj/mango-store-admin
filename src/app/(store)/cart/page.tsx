@@ -73,7 +73,7 @@ export default function CartPage() {
             {/* Items */}
             <div className="space-y-3">
               {items.map((item) => (
-                <div key={item._id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+                <div key={item.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
                   <div className="flex items-center gap-4">
                     <img
                       src={item.image || 'https://images.unsplash.com/photo-1553279768-865429fa0078?w=200'}
@@ -85,7 +85,7 @@ export default function CartPage() {
                       {item.origin && <p className="text-xs text-gray-400">{item.originFlag} {item.origin}</p>}
                       <p className="text-xs text-gray-400">{item.weight} · {fmt(item.price ?? item.pricePerKg ?? 0)}/kg</p>
                       <button
-                        onClick={() => removeItem(item._id)}
+                        onClick={() => removeItem(item.id)}
                         className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 mt-1 transition">
                         <Trash2 size={11} /> Remove
                       </button>
@@ -93,13 +93,13 @@ export default function CartPage() {
 
                     {/* Qty */}
                     <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
-                      <button onClick={() => updateQuantity(item._id, item.quantity - 1)}
+                      <button onClick={() => updateQuantity(item.id, item.quantity - 1)}
                         className="w-8 h-8 flex items-center justify-center text-white"
                         style={{ background: '#1a8a3c' }}>
                         <Minus size={13} />
                       </button>
                       <span className="w-10 text-center text-sm font-bold text-gray-700">{item.quantity}</span>
-                      <button onClick={() => updateQuantity(item._id, item.quantity + 1)}
+                      <button onClick={() => updateQuantity(item.id, item.quantity + 1)}
                         className="w-8 h-8 flex items-center justify-center text-white"
                         style={{ background: '#1a8a3c' }}>
                         <Plus size={13} />

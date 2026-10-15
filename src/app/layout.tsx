@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Providers from './providers';
 import { Playfair_Display, DM_Sans } from 'next/font/google';
 import './globals.css';
 
@@ -167,7 +168,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="theme-color" content="#1c6b3a" />
       </head>
-      <body>{children}</body>
+      <body>
+        <Providers>
+          {children}
+        </Providers>
+      </body>
     </html>
   );
 }

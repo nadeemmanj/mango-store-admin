@@ -3,10 +3,12 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ShoppingCart, Menu, X, User, Search, LogIn } from "lucide-react";
+import { ShoppingCart, Menu, X, User, Search, LogIn, LogOut } from "lucide-react";
+import { useSession, signOut } from "next-auth/react";
 import { useCartStore } from "@/store/cartStore";
 
 export default function Navbar() {
+  const { data: session, status } = useSession();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -41,6 +43,8 @@ export default function Navbar() {
     }
   };
 
+  const firstName = session?.user?.name?.split(' ')[0] || 'Account';
+
   const Logo = ({ iconSize = 62, fontSize = 20 }: { iconSize?: number; fontSize?: number }) => (
     <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
       <img
@@ -73,27 +77,81 @@ export default function Navbar() {
             <Logo iconSize={62} fontSize={17} />
             <div style={{ width: 32 }} />
              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px 10px" }}>
-            <Link href="/login" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 4, color: "#555", fontSize: 13, fontWeight: 500, whiteSpace: "nowrap", flexShrink: 0 }}>
-              <LogIn size={18} color="#555" strokeWidth={1.6} />
-            </Link>
-            <button onClick={openCart} aria-label="Cart" style={{ display: "flex", alignItems: "center", gap: 6, borderRadius: 50, padding: "5px 10px 5px 8px", cursor: "pointer", flexShrink: 0, position: "relative", background: "none", border: "none" }}>
-              <div style={{ position: "relative" }}>
-                <ShoppingCart size={22} color="#555" strokeWidth={1.6} />
-                <span style={{ position: "absolute", top: -7, right: -7, background: "#1a7a3c", color: "#fff", fontSize: 10, fontWeight: 900, width: 17, height: 17, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid #fff", lineHeight: 1 }}>
-                  {totalQty > 9 ? "9+" : totalQty}
-                </span>
-              </div>
-              <div style={{ lineHeight: 1.25, textAlign: "right" }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#222" }}>{fmt(totalAmount)}</div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: "#888" }}>AED</div>
-              </div>
-            </button>
-          </div>
+              {status === "authenticated" ? (
+                <button
+                  onClick={() => signOut({ callbackUrl: '/' })}
+                  style={{ ...bare, color: "#555" }}
+                  aria-label="Log Out"
+                >
+                  <LogOut size={18} color="#555" strokeWidth={1.6} />
+                </button>
+              ) : (
+                <Link href="/login" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 4, color: "#555", fontSize: 13, fontWeight: 500, whiteSpace: "nowrap", flexShrink: 0 }}>
+                  <LogIn size={18} color="#555" strokeWidth={1.6} />
+                </Link>
+              )}
+              <button onClick={openCart} aria-label="Cart" style={{ display: "flex", alignItems: "center", gap: 6, borderRadius: 50, padding: "5px 10px 5px 8px", cursor: "pointer", flexShrink: 0, position: "relative", background: "none", border: "none" }}>
+                <div style={{ position: "relative" }}>
+                  <ShoppingCart size={22} color="#555" strokeWidth={1.6} />
+                  <span style={{ position: "absolute", top: -7, right: -7, background: "#1a7a3c", color: "#fff", fontSize: 10, fontWeight: 900, width: 17, height: 17, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid #fff", lineHeight: 1 }}>
+                    {totalQty > 9 ? "9+" : totalQty}
+                  </span>
+                </div>
+                <div style={{ lineHeight: 1.25, textAlign: "right" }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#222" }}>{fmt(totalAmount)}</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#888" }}>AED</div>
+                </div>
+              </button>
+            </div>
           </div>
 
-          {/* Row 2: Search | Account | Log In | Cart */}
-         
-        </div>
+            {/* MOBILE SEARCH BAR — yahan add karo */}
+
+              <form
+                onSubmit={handleSearch}
+                className="mobile-search"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  margin: "0 14px 10px",
+                  padding: "10px 13px",
+                  border: "1px solid #ddd",
+                  borderRadius: 50,
+                  background: "#f7f9f8",
+                }}
+              >
+                <Search size={19} color="#555" />
+
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search fruits, mangoes, vegetables..."
+                  aria-label="Search products"
+                  style={{
+                    width: "100%",
+                    minWidth: 0,
+                    border: "none",
+                    outline: "none",
+                    background: "transparent",
+                    color: "#333",
+                    fontFamily: "inherit",
+                    fontSize: 14,
+                  }}
+                />
+
+                {query && (
+                  <button
+                    type="button"
+                    onClick={() => setQuery("")}
+                    aria-label="Clear search"
+                    style={bare}
+                  >
+                    <X size={18} color="#555" />
+                  </button>
+                )}
+              </form>
+         </div>
 
         {/* ─── DESKTOP ─── */}
         <div className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: 16, padding: "0 32px", height: 72 }}>
@@ -133,23 +191,45 @@ export default function Navbar() {
               </button>
             </div>
 
-            {/* Account */}
-            <Link href="/register"
-              style={{ ...bare, textDecoration: "none", width: 38, height: 38, borderRadius: "50%" }}
-              aria-label="Account"
-              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#f5f5f5")}
-              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "transparent")}>
-              <User size={20} color="#555" strokeWidth={1.6} />
-            </Link>
+            {status === "authenticated" ? (
+              <>
+                {/* Logged-in user name */}
+                <span style={{ fontSize: 13, fontWeight: 600, color: "#444", marginRight: 2, whiteSpace: "nowrap" }}>
+                  Hi, {firstName}
+                </span>
 
-            {/* Log In */}
-            <Link href="/login"
-              style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 5, color: "#444", fontSize: 13, fontWeight: 600, padding: "7px 14px", border: "1.5px solid #ddd", borderRadius: 50, whiteSpace: "nowrap", transition: "border-color 0.15s, color 0.15s" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#1a7a3c"; (e.currentTarget as HTMLElement).style.color = "#1a7a3c"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#ddd";    (e.currentTarget as HTMLElement).style.color = "#444"; }}>
-              <LogIn size={15} strokeWidth={1.8} />
-              Log In
-            </Link>
+                {/* Log Out */}
+                <button
+                  onClick={() => signOut({ callbackUrl: '/' })}
+                  style={{ display: "flex", alignItems: "center", gap: 5, background: "none", color: "#444", fontSize: 13, fontWeight: 600, padding: "7px 14px", border: "1.5px solid #ddd", borderRadius: 50, whiteSpace: "nowrap", cursor: "pointer", fontFamily: "inherit", transition: "border-color 0.15s, color 0.15s" }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#e53e3e"; (e.currentTarget as HTMLElement).style.color = "#e53e3e"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#ddd"; (e.currentTarget as HTMLElement).style.color = "#444"; }}
+                >
+                  <LogOut size={15} strokeWidth={1.8} />
+                  Log Out
+                </button>
+              </>
+            ) : (
+              <>
+                {/* Account */}
+                <Link href="/register"
+                  style={{ ...bare, textDecoration: "none", width: 38, height: 38, borderRadius: "50%" }}
+                  aria-label="Account"
+                  onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#f5f5f5")}
+                  onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "transparent")}>
+                  <User size={20} color="#555" strokeWidth={1.6} />
+                </Link>
+
+                {/* Log In */}
+                <Link href="/login"
+                  style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 5, color: "#444", fontSize: 13, fontWeight: 600, padding: "7px 14px", border: "1.5px solid #ddd", borderRadius: 50, whiteSpace: "nowrap", transition: "border-color 0.15s, color 0.15s" }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#1a7a3c"; (e.currentTarget as HTMLElement).style.color = "#1a7a3c"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#ddd";    (e.currentTarget as HTMLElement).style.color = "#444"; }}>
+                  <LogIn size={15} strokeWidth={1.8} />
+                  Log In
+                </Link>
+              </>
+            )}
 
             {/* Cart */}
             <button onClick={openCart} aria-label="Cart"
@@ -191,10 +271,25 @@ export default function Navbar() {
                 {label}
               </Link>
             ))}
-            <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-              <Link href="/login"    onClick={() => setMobileOpen(false)} style={{ flex: 1, textAlign: "center", border: "1.5px solid #ddd", borderRadius: 10, padding: "12px", fontSize: 14, fontWeight: 600, color: "#333", textDecoration: "none" }}>Sign In</Link>
-              <Link href="/register" onClick={() => setMobileOpen(false)} style={{ flex: 1, textAlign: "center", background: "#1a7a3c", borderRadius: 10, padding: "12px", fontSize: 14, fontWeight: 700, color: "#fff", textDecoration: "none" }}>Register</Link>
-            </div>
+
+            {status === "authenticated" ? (
+              <div style={{ marginTop: 20 }}>
+                <p style={{ fontSize: 14, fontWeight: 600, color: "#444", marginBottom: 10 }}>
+                  Signed in as {session.user?.name || session.user?.email}
+                </p>
+                <button
+                  onClick={() => { setMobileOpen(false); signOut({ callbackUrl: '/' }); }}
+                  style={{ width: "100%", textAlign: "center", background: "#e53e3e", border: "none", borderRadius: 10, padding: "12px", fontSize: 14, fontWeight: 700, color: "#fff", cursor: "pointer", fontFamily: "inherit" }}
+                >
+                  Log Out
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
+                <Link href="/login"    onClick={() => setMobileOpen(false)} style={{ flex: 1, textAlign: "center", border: "1.5px solid #ddd", borderRadius: 10, padding: "12px", fontSize: 14, fontWeight: 600, color: "#333", textDecoration: "none" }}>Sign In</Link>
+                <Link href="/register" onClick={() => setMobileOpen(false)} style={{ flex: 1, textAlign: "center", background: "#1a7a3c", borderRadius: 10, padding: "12px", fontSize: 14, fontWeight: 700, color: "#fff", textDecoration: "none" }}>Register</Link>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -203,11 +298,20 @@ export default function Navbar() {
         .mobile-nav  { display: block; }
         .desktop-nav { display: none !important; }
 
+        .mobile-search {
+          display: flex;
+        }
+
         @media (min-width: 768px) {
           .mobile-nav  { display: none !important; }
           .desktop-nav { display: flex !important; }
+
+          .mobile-search {
+            display: none !important;
+          }
         }
       `}</style>
+
     </>
   );
 }

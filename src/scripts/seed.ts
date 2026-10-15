@@ -1,47 +1,29 @@
-import mongoose from 'mongoose';
+import { initializeApp, cert } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 import bcrypt from 'bcryptjs';
 import * as dotenv from 'dotenv';
 import path from 'path';
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
-const MONGODB_URI = process.env.MONGODB_URI;
-if (!MONGODB_URI) { console.error('❌ MONGODB_URI not found in .env.local'); process.exit(1); }
+if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
+  console.error('❌ Firebase credentials not found in .env.local');
+  process.exit(1);
+}
 
-// ── Schemas ────────────────────────────────────────────────────────────────────
+const app = initializeApp({
+  credential: cert({
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+  }),
+});
 
-const ProductSchema = new mongoose.Schema({
-  name: String, slug: String,
-  image: String, images: [String],
-  origin: String, originFlag: String,
-  price: Number,
-  pricePerKg: Number,
-  originalPrice: Number,
-  discountPercent: Number,
-  weightOptions: [String],
-  description: String,
-  stock: Number,
-  inStock: Boolean,
-  unit: String,
-  category: String,
-  tags: [String],
-  featured: Boolean,
-  badge: String,
-  variants: [{ label: String, unit: String, price: Number }],
-}, { timestamps: true });
-
-const UserSchema = new mongoose.Schema({
-  name: String, email: String, passwordHash: String,
-  phone: String, role: String, addresses: Array,
-}, { timestamps: true });
-
-const Product = mongoose.models.Product || mongoose.model('Product', ProductSchema);
-const User    = mongoose.models.User    || mongoose.model('User',    UserSchema);
+const db = getFirestore(app);
 
 // ── Products ───────────────────────────────────────────────────────────────────
 
 const products = [
-
   // ─── PREMIUM MANGOES ──────────────────────────────────────────────────
   {
     name: 'Mango Chaunsa Premium',
@@ -86,7 +68,7 @@ const products = [
     origin: 'Pakistan', originFlag: '🇵🇰',
     price: 20, pricePerKg: 20,
     unit: 'Kg', category: 'Premium Mangoes',
-    description: 'Large, golden, and melt-in-the-mouth. Sindhri is Sindh\'s pride — mild, sweet, and perfect for fresh eating or smoothies.',
+    description: "Large, golden, and melt-in-the-mouth. Sindhri is Sindh's pride — mild, sweet, and perfect for fresh eating or smoothies.",
     stock: 45, inStock: true, featured: true,
     tags: ['mango', 'featured'],
     weightOptions: ['1 Kg', '3 Kg Box', '5 Kg Box'],
@@ -269,28 +251,51 @@ const products = [
 
 async function seed() {
   try {
-    console.log('🔄 Connecting to MongoDB Atlas...');
-    await mongoose.connect(MONGODB_URI as string);
-    console.log('✅ Connected to MongoDB Atlas\n');
+    console.log('🔄 Connecting to Firestore...');
 
-    await Product.deleteMany({});
-    await (Product.insertMany as any)(products);
+    // Purana products data delete karein
+    const productsRef = db.collection('products');
+    const existingProducts = await productsRef.get();
+    const deleteBatch = db.batch();
+    existingProducts.docs.forEach((doc) => deleteBatch.delete(doc.ref));
+    await deleteBatch.commit();
+
+    // Naya products data insert karein
+    const insertBatch = db.batch();
+    products.forEach((product) => {
+      const docRef = productsRef.doc(); // Auto-generated ID (MongoDB _id jaisa)
+      insertBatch.set(docRef, {
+        ...product,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    });
+    await insertBatch.commit();
+
     console.log(`✅ Seeded ${products.length} products`);
     console.log('   Premium Mangoes : Chaunsa, Anwar Ratol, Sindhri, Dusehri');
     console.log('   Seasonal        : Jamun, Lychee, Cherries, Apricots');
     console.log('   Everyday        : Strawberries, Apples, Guava, Watermelon, Bananas\n');
 
-    const adminEmail    = process.env.ADMIN_EMAIL    || 'admin@store.com';
+    // ── Admin user ─────────────────────────────────────────────────────────
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@store.com';
     const adminPassword = process.env.ADMIN_PASSWORD || 'Husnain2244@';
 
-    await User.deleteOne({ email: adminEmail });
-    await User.create({
-      name:         'Admin',
-      email:        adminEmail,
+    const usersRef = db.collection('users');
+    const existingAdmin = await usersRef.where('email', '==', adminEmail).get();
+    const adminDeleteBatch = db.batch();
+    existingAdmin.docs.forEach((doc) => adminDeleteBatch.delete(doc.ref));
+    await adminDeleteBatch.commit();
+
+    await usersRef.add({
+      name: 'Admin',
+      email: adminEmail,
       passwordHash: await bcrypt.hash(adminPassword, 12),
-      role:         'admin',
-      phone:        '+971 4 000 0000',
-      addresses:    [],
+      role: 'admin',
+      phone: '+971 4 000 0000',
+      addresses: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
     });
 
     console.log(`✅ Admin user created`);
@@ -298,8 +303,8 @@ async function seed() {
     console.log(`   Password: ${adminPassword}`);
     console.log('\n💡 Update ADMIN_EMAIL and ADMIN_PASSWORD in .env.local to change credentials.');
 
-    await mongoose.disconnect();
     console.log('\n🎉 Seed complete! Aan Al Khair store is ready.');
+    process.exit(0);
   } catch (err) {
     console.error('❌ Seed failed:', err);
     process.exit(1);

@@ -1,8 +1,7 @@
 import NextAuth, { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
-import { connectDB } from '@/lib/mongodb';
-import User from '@/models/User';
+import { db } from '@/lib/firebase';
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -15,22 +14,30 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        await connectDB();
+        const email = credentials.email.toLowerCase().trim();
 
-        const user = await User.findOne({
-          email: credentials.email.toLowerCase().trim(),
-        }).lean() as { _id: unknown; name: string; email: string; passwordHash: string; role: string } | null;
+        // Firestore mein email se user dhoondein
+        const usersRef = db.collection('users');
+        const snapshot = await usersRef.where('email', '==', email).limit(1).get();
 
-        if (!user) return null;
+        if (snapshot.empty) return null;
+
+        const userDoc = snapshot.docs[0];
+        const user = userDoc.data() as {
+          name: string;
+          email: string;
+          passwordHash: string;
+          role: string;
+        };
 
         const valid = await bcrypt.compare(credentials.password, user.passwordHash);
         if (!valid) return null;
 
         return {
-          id:    String(user._id),
+          id:    userDoc.id,        // Firestore ka auto-generated document ID
           name:  user.name,
           email: user.email,
-          role:  user.role,       // ← include role in token
+          role:  user.role,         // ← include role in token
         };
       },
     }),

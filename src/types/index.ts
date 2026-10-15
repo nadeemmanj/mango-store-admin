@@ -1,5 +1,5 @@
 export interface Product {
-  _id: string;
+  id: string;
   name: string;
   slug?: string;
   image?: string;
@@ -29,7 +29,7 @@ export type IProduct = Product;
 
 export interface ICartItem {
   productId: string;
-  _id?: string;
+  id?: string;
   name: string;
   image: string;
   pricePerKg: number;
@@ -39,7 +39,7 @@ export interface ICartItem {
 }
 
 export interface IAddress {
-  _id?: string;
+  id?: string;
   label: string;
   fullName: string;
   phone: string;
@@ -65,7 +65,7 @@ export interface IOrderTimeline {
 }
 
 export interface IOrder {
-  _id: string;
+  id: string;
   orderNumber: string;
   userId?: string;
   guestEmail?: string;
@@ -85,7 +85,7 @@ export interface IOrder {
 }
 
 export interface IUser {
-  _id: string;
+  id: string;
   name: string;
   email: string;
   phone?: string;

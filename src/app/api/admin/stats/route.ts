@@ -1,19 +1,41 @@
 import { NextResponse } from 'next/server';
-import { connectDB } from '@/lib/mongodb';
-import Order from '@/models/Order';
-import User from '@/models/User';
+import { db } from '@/lib/firebase';
+import { Timestamp } from 'firebase-admin/firestore';
 
 export async function GET() {
   try {
-    await connectDB();
-    const today = new Date(); today.setHours(0,0,0,0);
-    const [todayOrders, totalOrders, pendingOrders, totalCustomers, revenueData] = await Promise.all([
-      Order.countDocuments({ createdAt: { $gte: today } }),
-      Order.countDocuments(),
-      Order.countDocuments({ status: { $in: ['placed','confirmed','packed'] } }),
-      User.countDocuments({ role: 'customer' }),
-      Order.aggregate([{ $match: { paymentStatus: 'paid' } }, { $group: { _id: null, total: { $sum: '$total' } } }]),
-    ]);
-    return NextResponse.json({ success: true, stats: { todayOrders, totalOrders, pendingOrders, totalCustomers, revenue: revenueData[0]?.total || 0 } });
-  } catch { return NextResponse.json({ success: false, error: 'Failed' }, { status: 500 }); }
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayTimestamp = Timestamp.fromDate(today);
+
+    const ordersRef = db.collection('orders');
+    const usersRef = db.collection('users');
+
+    const [todayOrdersSnap, allOrdersSnap, pendingOrdersSnap, customersSnap, paidOrdersSnap] =
+      await Promise.all([
+        ordersRef.where('createdAt', '>=', todayTimestamp).get(),
+        ordersRef.get(),
+        ordersRef.where('status', 'in', ['placed', 'confirmed', 'packed']).get(),
+        usersRef.where('role', '==', 'customer').get(),
+        ordersRef.where('paymentStatus', '==', 'paid').get(),
+      ]);
+
+    const revenue = paidOrdersSnap.docs.reduce((sum, doc) => {
+      const data = doc.data();
+      return sum + (data.total || 0);
+    }, 0);
+
+    return NextResponse.json({
+      success: true,
+      stats: {
+        todayOrders: todayOrdersSnap.size,
+        totalOrders: allOrdersSnap.size,
+        pendingOrders: pendingOrdersSnap.size,
+        totalCustomers: customersSnap.size,
+        revenue,
+      },
+    });
+  } catch {
+    return NextResponse.json({ success: false, error: 'Failed' }, { status: 500 });
+  }
 }

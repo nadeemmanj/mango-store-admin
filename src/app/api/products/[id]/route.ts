@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { connectDB } from '@/lib/mongodb';
-import Product from '@/models/Product';
+import { db } from '@/lib/firebase';
+import { FieldValue } from 'firebase-admin/firestore';
 
 export async function PUT(
   req: Request,
@@ -8,19 +8,35 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    await connectDB();
     const body = await req.json();
-    const updated = await Product.findByIdAndUpdate(
-      id,
-      {
-        ...body,
-        images: body.image ? [body.image] : undefined,
-        inStock: (body.stock ?? 0) > 0,
-        pricePerKg: body.price,
-      },
-      { new: true }
-    );
-    if (!updated) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
+
+    const docRef = db.collection('products').doc(id);
+    const existing = await docRef.get();
+
+    if (!existing.exists) {
+      return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
+    }
+
+    const updateData = {
+      ...body,
+      images: body.image ? [body.image] : undefined,
+      inStock: (body.stock ?? 0) > 0,
+      pricePerKg: body.price,
+      updatedAt: FieldValue.serverTimestamp(),
+    };
+
+    // undefined fields Firestore mein error deti hain, isliye clean karein
+    Object.keys(updateData).forEach((key) => {
+      if (updateData[key as keyof typeof updateData] === undefined) {
+        delete updateData[key as keyof typeof updateData];
+      }
+    });
+
+    await docRef.update(updateData);
+
+    const updatedDoc = await docRef.get();
+    const updated = { id: updatedDoc.id, ...updatedDoc.data() };
+
     return NextResponse.json({ success: true, product: updated });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
@@ -33,9 +49,16 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    await connectDB();
-    const deleted = await Product.findByIdAndDelete(id);
-    if (!deleted) return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404 });
+
+    const docRef = db.collection('products').doc(id);
+    const existing = await docRef.get();
+
+    if (!existing.exists) {
+      return NextResponse.json({ success: false, error: 'Product not found' }, { status: 404 });
+    }
+
+    await docRef.delete();
+
     return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

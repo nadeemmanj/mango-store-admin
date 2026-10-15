@@ -12,7 +12,7 @@ export default function ProductCard({ product }: { product: Product }) {
   const [adding, setAdding] = useState(false);
   const addToCart  = useCartStore((s) => s.addItem);
   const cartItems  = useCartStore((s) => s.items);
-  const inCart     = cartItems.find((i) => String(i._id) === String(product._id));
+  const inCart     = cartItems.find((i) => String(i.id) === String(product.id));
   const currentQty = inCart?.quantity ?? 0;
 
   const price         = Number(product?.price ?? product?.pricePerKg ?? 0);
@@ -27,18 +27,18 @@ export default function ProductCard({ product }: { product: Product }) {
   const handleAdd = async () => {
     if (stock === 0) return;
     setAdding(true);
-    addToCart({ ...product, _id: String(product._id), quantity: 1 });
+    addToCart({ ...product, id: String(product.id), quantity: 1 });
     await new Promise((r) => setTimeout(r, 300));
     setAdding(false);
   };
 
   const handleIncrease = () => {
-    if (currentQty < stock) addToCart({ ...product, _id: String(product._id), quantity: 1 });
+    if (currentQty < stock) addToCart({ ...product, id: String(product.id), quantity: 1 });
   };
 
   const handleDecrease = () => {
     const { updateQuantity } = useCartStore.getState();
-    updateQuantity(String(product._id), currentQty - 1);
+    updateQuantity(String(product.id), currentQty - 1);
   };
 
   if (!product) return null;
@@ -63,7 +63,7 @@ export default function ProductCard({ product }: { product: Product }) {
     }}>
 
       {/* Image */}
-      <Link href={`/products/${product._id}`} style={{ display: 'block', position: 'relative', background: '#f9fbf9', aspectRatio: '1/1', overflow: 'hidden' }}>
+      <Link href={`/products/${product.id}`} style={{ display: 'block', position: 'relative', background: '#f9fbf9', aspectRatio: '1/1', overflow: 'hidden' }}>
         {product.image ? (
           <Image src={product.image} alt={product.name ?? 'Product'} fill
             style={{ objectFit: 'contain', padding: 8, transition: 'transform 0.3s' }}
@@ -97,7 +97,7 @@ export default function ProductCard({ product }: { product: Product }) {
 
       {/* Info */}
       <div style={{ padding: '12px 12px 10px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <Link href={`/products/${product._id}`} style={{ textDecoration: 'none' }}>
+        <Link href={`/products/${product.id}`} style={{ textDecoration: 'none' }}>
           <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--green)', lineHeight: 1.3, marginBottom: 4, minHeight: 36 }}>
             {product.name}
           </h3>

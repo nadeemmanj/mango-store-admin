@@ -69,7 +69,7 @@ export default function CartDrawer() {
           ) : (
             <div className="space-y-3">
               {items.map((item) => (
-                <div key={item._id} className="bg-white border border-gray-100 rounded-xl p-3 shadow-sm">
+                <div key={item.id} className="bg-white border border-gray-100 rounded-xl p-3 shadow-sm">
                   <div className="flex gap-3">
                     <img
                       src={item.image || 'https://images.unsplash.com/photo-1553279768-865429fa0078?w=100'}
@@ -79,7 +79,7 @@ export default function CartDrawer() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between">
                         <p className="font-semibold text-sm text-gray-800 leading-tight line-clamp-2">{item.name}</p>
-                        <button onClick={() => removeItem(item._id)} className="text-gray-300 hover:text-red-500 transition ml-1 flex-shrink-0">
+                        <button onClick={() => removeItem(item.id)} className="text-gray-300 hover:text-red-500 transition ml-1 flex-shrink-0">
                           <X size={14} />
                         </button>
                       </div>
@@ -90,14 +90,14 @@ export default function CartDrawer() {
                       <div className="flex items-center justify-between mt-2">
                         <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden">
                           <button
-                            onClick={() => updateQuantity(item._id, item.quantity - 1)}
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
                             className="w-7 h-7 flex items-center justify-center text-white"
                             style={{ background: '#1a8a3c' }}>
                             <Minus size={12} />
                           </button>
                           <span className="w-8 text-center text-sm font-bold text-gray-700">{item.quantity}</span>
                           <button
-                            onClick={() => updateQuantity(item._id, item.quantity + 1)}
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
                             className="w-7 h-7 flex items-center justify-center text-white"
                             style={{ background: '#1a8a3c' }}>
                             <Plus size={12} />

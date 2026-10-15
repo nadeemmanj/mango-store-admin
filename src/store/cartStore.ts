@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import { Product } from '@/types';
 
 export interface CartItem {
-  _id: string;
+  id: string;
   productId?: string;
   name: string;
   image: string;
@@ -39,13 +39,13 @@ export const useCartStore = create<CartState>()(
 
       addItem: (product: any) => {
         set((state) => {
-          const id = String(product._id || product.productId || '');
+          const id = String(product.id || product.productId || '');
           const price = Number(product.price ?? product.pricePerKg ?? 0);
-          const existing = state.items.find(i => i._id === id);
+          const existing = state.items.find(i => i.id === id);
           if (existing) {
             return {
               items: state.items.map(i =>
-                i._id === id
+                i.id === id
                   ? { ...i, quantity: i.quantity + 1, subtotal: (i.quantity + 1) * i.price }
                   : i
               ),
@@ -53,7 +53,7 @@ export const useCartStore = create<CartState>()(
             };
           }
           const newItem: CartItem = {
-            _id: id,
+            id: id,
             productId: id,
             name: product.name || '',
             image: product.image || product.images?.[0] || '',
@@ -71,7 +71,7 @@ export const useCartStore = create<CartState>()(
       },
 
       removeItem: (id: string) => {
-        set(state => ({ items: state.items.filter(i => i._id !== id) }));
+        set(state => ({ items: state.items.filter(i => i.id !== id) }));
       },
 
       updateQuantity: (id: string, quantity: number) => {
@@ -81,7 +81,7 @@ export const useCartStore = create<CartState>()(
         }
         set(state => ({
           items: state.items.map(i =>
-            i._id === id
+            i.id === id
               ? { ...i, quantity, subtotal: quantity * i.price }
               : i
           ),

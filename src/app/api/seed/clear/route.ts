@@ -1,19 +1,20 @@
 import { NextResponse } from 'next/server';
-import { connectDB } from '@/lib/mongodb';
-import mongoose from 'mongoose';
+import { db } from '@/lib/firebase';
 
 export const dynamic = 'force-dynamic';
 
-const ProductSchema = new mongoose.Schema({ name: String }, { strict: false });
-const Product = mongoose.models.Product || mongoose.model('Product', ProductSchema);
-
 export async function GET() {
   try {
-    await connectDB();
-    const result = await Product.deleteMany({});
+    const productsRef = db.collection('products');
+    const snapshot = await productsRef.get();
+
+    const batch = db.batch();
+    snapshot.docs.forEach((doc) => batch.delete(doc.ref));
+    await batch.commit();
+
     return NextResponse.json({
       success: true,
-      message: `✅ Deleted ${result.deletedCount} products from database`,
+      message: `✅ Deleted ${snapshot.size} products from database`,
     });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

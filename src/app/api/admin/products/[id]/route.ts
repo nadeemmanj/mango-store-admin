@@ -1,8 +1,12 @@
+import { requireAdmin } from '@/lib/adminGuard';
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
 import { FieldValue } from 'firebase-admin/firestore';
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     const { id } = await params;
     const body = await req.json();
@@ -39,6 +43,9 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 }
 
 export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     const { id } = await params;
     await db.collection('products').doc(id).delete();

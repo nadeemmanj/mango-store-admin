@@ -1,8 +1,12 @@
+import { requireAdmin } from '@/lib/adminGuard';
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
 import { FieldValue } from 'firebase-admin/firestore';
 
 export async function GET() {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     const snapshot = await db.collection('products').orderBy('createdAt', 'desc').get();
 
@@ -18,6 +22,9 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     const body = await req.json();
 

@@ -1,8 +1,12 @@
+import { requireAdmin } from '@/lib/adminGuard';
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
 import { Timestamp } from 'firebase-admin/firestore';
 
 export async function GET() {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);

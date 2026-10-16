@@ -63,7 +63,7 @@ export default function CheckoutPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           items: items.map(i => ({
-            productId: i._id,
+            productId: i.id,
             name: i.name,
             pricePerKg: i.price ?? i.pricePerKg ?? 0,
             weight: i.weight || '1kg',
@@ -356,7 +356,7 @@ export default function CheckoutPage() {
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Order Items</p>
                   <div className="space-y-3">
                     {items.map(item => (
-                      <div key={item._id} className="flex items-center gap-3">
+                      <div key={item.id} className="flex items-center gap-3">
                         <img src={item.image} alt={item.name}
                           className="w-12 h-12 rounded-lg object-cover bg-gray-100 flex-shrink-0" />
                         <div className="flex-1 min-w-0">

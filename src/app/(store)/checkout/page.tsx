@@ -87,7 +87,7 @@ export default function CheckoutPage() {
       const data = await res.json();
       if (data.success) {
         clearCart();
-        router.push(`/order-confirmation/${data.order._id}?orderNumber=${data.order.orderNumber}`);
+        router.push(`/order-confirmation/${data.order.id}?orderNumber=${data.order.orderNumber}`);
       } else {
         setError(data.error || 'Failed to place order. Please try again.');
         setLoading(false);
